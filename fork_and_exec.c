@@ -1,6 +1,10 @@
 #include<stdlib.h>
 #include<unistd.h>
 #include<stdio.h>
+#include<sys/types.h>
+#include<sys/wait.h>
+
+int child(void);
 
 int main() {
 
@@ -9,14 +13,12 @@ int main() {
 
     pid_t process_id = fork();
 
-    /*
-     * At this point, there are two copies of the
-     * program executing at this line. The way we
-     * tell which is which is by the return value
-     * of fork().
-     *
-     * But first, some error checking...
-     */
+    // At this point, there are two copies of the
+    // program executing at this line. The way we
+    // tell which is which is by the return value
+    // of fork().
+    //
+    // But first, some error checking...
     if (process_id < 0) {
         perror("Error occurred using fork()");
         exit(EXIT_FAILURE);
@@ -62,5 +64,35 @@ int main() {
 }
 
 int child() {
-    return EXIT_SUCCESS;
+    printf("I'm the child process!\n");
+    fflush(stdout);
+
+    // We want to run the "ls" command to list
+    // files in the current working directory
+    // with long, human readable descriptions.
+    //
+    // In the shell we'd type "ls -l -h", but
+    // using exec(), "ls", "-l", and "-h" are
+    // separate arguments to the call. Note that
+    // the first argument to any program is its
+    // name (in this case "ls").
+    //
+    // Also note that we don't have to specify the
+    // full path of "ls", since "execlp" will use
+    // the PATH like the shell does to find the
+    // command "ls".
+    execlp("ls",             // command name
+           "ls", "-l", "-h", // arguments to command
+           (char *) NULL     // NULL termination of argument list
+          );
+
+    // If exec() worked, then the execution
+    // of the child process is replaced with
+    // the execution of "ls", so the child
+    // no longer exists.
+
+    // Therefore, if exex() returns,
+    // something bad happened...
+    perror("Error calling exec()");
+    return EXIT_FAILURE;
 }
